@@ -1,5 +1,5 @@
-import { log, readPhase, readAgent, promptUser, readConfig } from './services/utils.js';
-import { executePhase } from './services/ai.js';
+import { log, readPhase, readAgent, promptUser, readTodo, writeTodo } from './services/utils.js';
+import { work } from './services/ai.js';
 import { createInterface } from 'readline';
 import { exit } from 'process';
 
@@ -78,78 +78,89 @@ async function askBreakpoint({ retries, phaseCount }) {
 
 function validateBreakpoint(bp) {
     let breakpoint = bp;
-    if (breakpoint === 0 || breakpoint === undefined) {
+    if (breakpoint === undefined) {
         breakpoint = phases.length;
-    } else if (breakpoint < 0 || breakpoint > phases.length || !Number.isInteger(breakpoint)) {
-        console.log(`Error: ${breakpoint} is not a valid breakpoint, must be a valid number (0 - ${phases.length})`);
+    } else if (breakpoint < 0 || breakpoint > phases.length - 1 || !Number.isInteger(breakpoint)) {
+        console.log(`Error: ${breakpoint} is not a valid breakpoint, must be a valid number (0 - ${phases.length - 1})`);
         exit(1);
     }
     return breakpoint;
 }
 
 
-async function executeWorkflow({ objective, repo, breakpoint }) {
+async function doWork(todos) {
 
-    for (let i = 0; i < breakpoint; i++) {
+    let workingTodos = [];
 
-        const p = phases[i];
+    for (let i = 0; i < todos.length; i++) {
 
-        const agent = readAgent(p.agent);
-        const phase = readPhase(p.name);
+        const todo = todos[i];
 
-        console.log(`Begin [${p.name}] as [${p.agent}]`);
-
-        const response = await executePhase({
-            repo: repo,
-            phase: phase,
-            objective: objective,
-            agent: agent
-        });
-
-        log({ message: response });
-    }
-
-
-    /*
-
-        // check final output, if fail, check error output file and restart if needed
-
-        if(errors) {
-            executeWorkflow({ 
-                repo: repo,
-                objective: "Fix the bug found in .ai/test-result.md"
-            });
+        if(todo.state && todo.state.status === 'complete') {
+            continue;
         }
 
-    */
+        console.log(`Todo: ${i + 1}/${todos.length}`);
+        console.log(`Repo: ${todo.repo}`);
+        console.log(`Objective: ${todo.objective}`);
+
+        const breakpoint = validateBreakpoint(todo.breakpoint);
+        if(breakpoint < phases.length) {
+            console.log(`Breakpoint: (${breakpoint}) ${phases[breakpoint].name}`);
+        }
+
+        let start = 0;
+
+        if(todo.state) {
+            start = todo.state.last + 1;
+            console.log(`Status: ${todo.state.status}`);
+            console.log(`Last: (${todo.state.last}) ${phases[todo.state.last].name}`);
+            console.log(`Resume: (${start}) ${phases[start].name}`);
+        } else {
+            todo.state = {};
+        }
+
+        console.log("");
+
+        for (let i = start; i < breakpoint; i++) {
+
+            const p = phases[i];
+
+            console.log(`    - Begin phase (${i}) ${p.name} as ${p.agent} agent`);
+
+            const response = await work({
+                repo: todo.repo,
+                objective: todo.objective,
+                phasePrompt: readPhase(p.name),
+                agentPrompt: readAgent(p.agent)
+            });
+
+            log({ message: response });
+            todo.state.last = i;
+
+        }
+
+        if(todo.state.last === phases.length - 1) {
+            todo.state.status = "complete";
+        } else {
+            todo.state.status = "in_progress";
+        }
+
+        workingTodos.push(todo);
+    }
+
+    return workingTodos;
 
 }
-
-
 
 try {
 
     console.log("\nClocking in");
     console.log("-----------\n");
 
-    const config = readConfig();
-
-    for (let i = 0; i < config.todos.length; i++) {
-        const todo = config.todos[i];
-
-        console.log(`--- Todo ${i + 1}`);
-        console.log(`Repo: ${todo.repo}`);
-        console.log(`Objective: ${todo.objective}`);
-
-        const breakpoint = validateBreakpoint(todo.breakpoint);
-        console.log(`Breakpoint: (${breakpoint}) ${phases[breakpoint - 1].name}\n`);
-
-        await executeWorkflow({
-            repo: todo.repo,
-            objective: todo.objective,
-            breakpoint: breakpoint
-        });
-    }
+    const board = readTodo();
+    const updatedBoard = { todos: await doWork(board.todos) };
+    writeTodo(updatedBoard);
 
     console.log("\nClocking out");
     console.log("------------\n");

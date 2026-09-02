@@ -1,9 +1,9 @@
 import { prompt } from './copilot.js';
 
-function buildPrompt({ phase, objective, agent }) {
+function buildPrompt({ phasePrompt, objective, agentPrompt }) {
 
     const prompt = `
-    ${agent}
+    ${agentPrompt}
 
     ---
 
@@ -13,7 +13,7 @@ function buildPrompt({ phase, objective, agent }) {
 
     ---
 
-    ${phase}
+    ${phasePrompt}
 
     `;
 
@@ -21,13 +21,18 @@ function buildPrompt({ phase, objective, agent }) {
 }
 
 
-export async function executePhase({ repo, phase, objective, agent }) {
-    return prompt({ 
+export async function work({ repo, phasePrompt, objective, agentPrompt }) {
+
+    const _prompt = buildPrompt({
+        phasePrompt: phasePrompt,
+        objective: objective,
+        agentPrompt: agentPrompt
+    }); 
+
+    // console.log(_prompt);
+
+    return await prompt({ 
         repo: repo, 
-        prompt: buildPrompt({
-            phase: phase,
-            objective: objective,
-            agent: agent
-        }) 
+        prompt: _prompt
     });
 }

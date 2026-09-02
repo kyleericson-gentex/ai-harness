@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'fs';
 
 
 const projectRoot = new URL('../../', import.meta.url);
@@ -17,7 +17,7 @@ export function promptUser({ question, rlInterface }) {
 export function readTodo() {
     try {
         const content = readFileSync(
-            new URL(`./todo.json`, projectRoot),
+            new URL(`./backlog.json`, projectRoot),
             'utf8'
         );
         return JSON.parse(content);
@@ -29,8 +29,8 @@ export function readTodo() {
 
 export function writeTodo(data) {
     try {
-        const content = writeFileSync(
-            new URL(`./todo.json`, projectRoot),
+        writeFileSync(
+            new URL(`./backlog.json`, projectRoot),
             JSON.stringify(data),
             'utf8'
         );
@@ -60,7 +60,7 @@ export function readPhase(phase) {
 
 
 export function log({ message }) {
-    const logFilePath = new URL('./log', projectRoot);
-    writeFileSync(logFilePath, message);
+    const logFilePath = new URL('./response.log', projectRoot);
+    appendFileSync(logFilePath, message);
 }
 
