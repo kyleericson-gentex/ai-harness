@@ -14,7 +14,7 @@ export function promptUser({ question, rlInterface }) {
 }
 
 
-export function readTodo() {
+export function readBacklog() {
     try {
         const content = readFileSync(
             new URL(`./backlog.json`, projectRoot),
@@ -27,7 +27,7 @@ export function readTodo() {
     }
 }
 
-export function writeTodo(data) {
+export function writeBacklog(data) {
     try {
         writeFileSync(
             new URL(`./backlog.json`, projectRoot),

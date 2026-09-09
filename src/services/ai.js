@@ -1,5 +1,3 @@
-import { prompt } from './copilot.js';
-
 function buildPrompt({ phasePrompt, objective, agentPrompt }) {
 
     const prompt = `
@@ -21,7 +19,7 @@ function buildPrompt({ phasePrompt, objective, agentPrompt }) {
 }
 
 
-export async function work({ repo, phasePrompt, objective, agentPrompt }) {
+export async function prompt({ backend, repo, phasePrompt, objective, agentPrompt }) {
 
     const _prompt = buildPrompt({
         phasePrompt: phasePrompt,
@@ -31,7 +29,7 @@ export async function work({ repo, phasePrompt, objective, agentPrompt }) {
 
     // console.log(_prompt);
 
-    return await prompt({ 
+    return await backend.prompt({ 
         repo: repo, 
         prompt: _prompt
     });

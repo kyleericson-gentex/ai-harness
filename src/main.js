@@ -1,7 +1,8 @@
-import { log, readPhase, readAgent, promptUser, readTodo, writeTodo } from './services/utils.js';
-import { work } from './services/ai.js';
+import { log, readPhase, readAgent, promptUser, readBacklog, writeBacklog } from './services/utils.js';
+import { prompt } from './services/ai.js';
 import { createInterface } from 'readline';
 import { exit } from 'process';
+import { copilot } from './services/copilot.js';
 
 
 const rl = createInterface({
@@ -90,7 +91,7 @@ function validateBreakpoint(bp) {
 
 async function doWork(todos) {
 
-    let workingTodos = [];
+    let updatedTodos = [];
 
     for (let i = 0; i < todos.length; i++) {
 
@@ -128,7 +129,8 @@ async function doWork(todos) {
 
             console.log(`    - Begin phase (${i}) ${p.name} as ${p.agent} agent`);
 
-            const response = await work({
+            const response = await prompt({
+                backend: copilot,
                 repo: todo.repo,
                 objective: todo.objective,
                 phasePrompt: readPhase(p.name),
@@ -146,10 +148,10 @@ async function doWork(todos) {
             todo.state.status = "in_progress";
         }
 
-        workingTodos.push(todo);
+        updatedTodos.push(todo);
     }
 
-    return workingTodos;
+    return updatedTodos;
 
 }
 
@@ -158,9 +160,9 @@ try {
     console.log("\nClocking in");
     console.log("-----------\n");
 
-    const board = readTodo();
+    const board = readBacklog();
     const updatedBoard = { todos: await doWork(board.todos) };
-    writeTodo(updatedBoard);
+    writeBacklog(updatedBoard);
 
     console.log("\nClocking out");
     console.log("------------\n");
