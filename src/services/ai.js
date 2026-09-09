@@ -1,36 +1,17 @@
-function buildPrompt({ phasePrompt, objective, agentPrompt }) {
-
-    const prompt = `
-    ${agentPrompt}
-
-    ---
-
-    # Objective
-
-    ${objective}
-
-    ---
-
-    ${phasePrompt}
-
-    `;
-
-    return prompt;
-}
+import { copilot } from './copilot.js';
+// import { opencode } from './opencode.js';
 
 
-export async function prompt({ backend, repo, phasePrompt, objective, agentPrompt }) {
+const providers = [
+    copilot
+];
 
-    const _prompt = buildPrompt({
-        phasePrompt: phasePrompt,
-        objective: objective,
-        agentPrompt: agentPrompt
-    }); 
 
-    // console.log(_prompt);
 
-    return await backend.prompt({ 
+export async function runPrompt({ repo, prompt, provider = 0 }) {
+    return await providers[provider].prompt({ 
         repo: repo, 
-        prompt: _prompt
+        prompt: prompt
     });
 }
+

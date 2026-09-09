@@ -43,17 +43,20 @@ export function writeBacklog(data) {
 }
 
 
-export function readAgent(agent) {
-    return readFileSync(
-        new URL(`./prompts/agents/${agent}.md`, projectRoot),
-        'utf8'
-    );
+export function validateBreakpoint(bp, max) {
+    let breakpoint = bp;
+    if (breakpoint === undefined) {
+        breakpoint = max;
+    } else if (breakpoint < 0 || breakpoint > max - 1 || !Number.isInteger(breakpoint)) {
+        console.log(`Error: ${breakpoint} is not a valid breakpoint, must be a valid number (0 - ${max - 1})`);
+    }
+    return breakpoint;
 }
 
 
-export function readPhase(phase) {
+export function readPrompt(name) {
     return readFileSync(
-        new URL(`./prompts/phases/${phase}.md`, projectRoot),
+        new URL(`./prompts/${name}.md`, projectRoot),
         'utf8'
     );
 }

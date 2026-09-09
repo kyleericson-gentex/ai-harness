@@ -9,14 +9,11 @@ export const copilot = {
 
     prompt: async function({ repo, prompt }) {
 
-        // string.format("copilot --session-id=%q -p %q --allow-all", session_id, prompt)
-
-        const { stdout } = await execFileAsync(
+        const { stdout, stderr } = await execFileAsync(
             "copilot",
             [
                 "-s",
-                "--prompt",
-                prompt,
+                "--prompt", prompt,
                 "--allow-all"
             ],
             {
@@ -25,6 +22,6 @@ export const copilot = {
             }
         );
 
-        return stdout;
+        return { stdout, stderr };
     }
 }
