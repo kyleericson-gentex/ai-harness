@@ -1,29 +1,14 @@
-import { 
+import {
     readPrompt,
     readBacklog,
-    writeBacklog,
-    validateBreakpoint 
+    writeBacklog
 } from './services/utils.js';
 import { runPrompt } from './services/ai.js';
-import { createInterface } from 'readline';
+import { phaseDefinitions, phaseWorkflows } from './phases.js';
 import { exit } from 'process';
 
 
-const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-
-const phases = [
-    "discovery",
-    "plan",
-    "create_tasks",
-    "implement",
-    // "review",
-    // "security_review",
-    // "test",
-];
+let artifactLocation = "./.ai";
 
 
 async function doWork(todos) {
@@ -32,7 +17,9 @@ async function doWork(todos) {
 
     for (let i = 0; i < todos.length; i++) {
         const todo = todos[i];
-        if(todo.state && todo.state.status === 'complete') {
+
+        if (todo.state && (todo.state.status === 'complete' || todo.state.status === 'on_hold')) {
+            updatedTodos.push(todo);
             continue;
         }
 
@@ -40,45 +27,72 @@ async function doWork(todos) {
         console.log(`Repo: ${todo.repo}`);
         console.log(`Objective: ${todo.objective}`);
 
-        const breakpoint = validateBreakpoint(todo.breakpoint, phases.length);
-        if(breakpoint < 0) {
-            rl.close();
-            exit(1);
+
+        let phaseState = {
+            current: "discovery",
+            previous: null,
         }
 
-        if(breakpoint < phases.length) {
-            console.log(`Breakpoint: (${breakpoint}) ${phases[breakpoint]}`);
-        }
+        let current = "discovery";
+        let previous = null;
 
-        let start = 0;
 
-        if(todo.state) {
-            start = todo.state.last + 1;
-            console.log(`Status: ${todo.state.status}`);
-            console.log(`Last: (${todo.state.last}) ${phases[todo.state.last]}`);
-            console.log(`Resume: (${start}) ${phases[start]}`);
+        if (todo.state) {
+            current = phaseDefinitions[todo.state.last].next.success || null;
+            console.log(`Activity: ${todo.state.activity}`);
+            console.log(`Last: ${todo.state.last}`);
+            console.log(`Resuming At: ${current}`);
         } else {
             todo.state = {};
         }
 
         console.log("");
 
-        for (let i = start; i < breakpoint; i++) {
-            const p = phases[i];
-            console.log(`    - Begin phase (${i}) ${p}`);
-            let _prompt = readPrompt(p);
-            _prompt = _prompt.replaceAll("#{objective}#", objective)
-            await runPrompt({
+        while(current !== todo.break && current !== null && current !== undefined) {
+
+            const phaseDefinition = phaseDefinitions[current];
+            const phaseWorkflow = phaseWorkflows[current];
+
+            console.log(`    - Working on ${phaseDefinition.name}`);
+
+            let prompt = readPrompt(phaseDefinition.prompt);
+
+            prompt = prompt
+                .replaceAll("#{objective}#", todo.objective)
+                .replaceAll("#{artifactLocation}#", artifactLocation)
+                .replaceAll("#{artifact}#", `${artifactLocation}/${phaseDefinition.artifact}`)
+
+            if(previous) {
+                prompt = prompt.replaceAll("#{previousArtifact}#", `${artifactLocation}/${phaseDefinitions[previous].artifact || ""}`);
+            }
+
+            let { pass, stdout, stderr } = await runPrompt({
                 repo: todo.repo,
-                prompt: _prompt
+                prompt: prompt
             });
-            todo.state.last = i;
+
+            previous = current;
+
+            if(pass) {
+                current = phaseWorkflow.success || null;
+                todo.state.status = "pass";
+            } else {
+                current = phaseWorkflow.failure || null;
+                todo.state.status = "fail";
+            }
+
         }
 
-        if(todo.state.last === phases.length - 1) {
-            todo.state.status = "complete";
+        todo.state.last = previous;
+
+        if (current === null) {
+            todo.state.activity = "complete";
+
+        } else if(current === todo.break) {
+            todo.state.activity = "active";
+
         } else {
-            todo.state.status = "in_progress";
+            todo.state.activity = "error";
         }
 
         updatedTodos.push(todo);
@@ -102,5 +116,4 @@ try {
 } catch (error) {
     console.error('Error:', error);
 } finally {
-    rl.close();
 }

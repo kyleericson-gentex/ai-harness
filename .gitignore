@@ -1,2 +1,4 @@
 *.json
 *.log
+.ai/
+AGENTS.md

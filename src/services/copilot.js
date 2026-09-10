@@ -22,6 +22,6 @@ export const copilot = {
             }
         );
 
-        return { stdout, stderr };
+        return { pass: true, stdout: stdout, stderr: stderr };
     }
 }

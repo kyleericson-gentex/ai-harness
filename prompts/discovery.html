@@ -27,23 +27,24 @@ Your responsibility is to understand the codebase and identify the areas relevan
     Make note of anything that would be important to accomplish the objective.
     </description>
     <objective>
-    Analyze the repository and identify all files, components, dependencies, workflows, and architectural areas relevant to the overall objective. Document findings in .ai/discovery.md.
+    Analyze the repository and identify all files, components, dependencies, workflows, and architectural areas relevant to the overall objective. Document findings in #{artifact}#.
     </objective>
 </phase>
 
 <context>
     <file>./AGENTS.md</file>
+    <file>#{artifactLocation}#/*</file>
 </context>
 
 <facts>
-    <fact>.ai/discovery.md is not a permanent file and should not be referenced to elsewhere in the repo</fact>
+    <fact>#{artifact}# is not a permanent file and should not be referenced to elsewhere in the repo</fact>
     <fact>AGENTS.md and discovery.md are isolated and should not reference each other</fact>
 </facts>
 
 <tasks>
     <task>IF ABLE, create a new git branch for the feature/fix before making changes. Follow this naming convention ai/feature-name</task>
     <task>analyze the repository</task>
-    <task>create .ai/discovery.md file in the repository detailing your findings. This is used as input for future phases</task>
+    <task>create #{artifact}# file in the repository detailing your findings. This is used as input for future phases</task>
     <task>update/create a AGENTS.md file</task>
     <task>create a single commit containing discovery artifacts</task>
 </tasks>
@@ -51,7 +52,7 @@ Your responsibility is to understand the codebase and identify the areas relevan
 <final-checklist>
     <item>Code has been analyzed and understood</item>
     <item>AGENTS.md file has been created/updated</item>
-    <item>.ai/discovery.md is created</item>
+    <item>#{artifact}# is created</item>
 </final-checklist>
 
 <review>

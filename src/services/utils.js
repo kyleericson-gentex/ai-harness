@@ -54,9 +54,9 @@ export function validateBreakpoint(bp, max) {
 }
 
 
-export function readPrompt(name) {
+export function readPrompt(file) {
     return readFileSync(
-        new URL(`./prompts/${name}.md`, projectRoot),
+        new URL(`./prompts/${file}`, projectRoot),
         'utf8'
     );
 }
