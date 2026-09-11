@@ -63,7 +63,7 @@ export function readPrompt(file) {
 
 
 export function log({ message }) {
-    const logFilePath = new URL('./response.log', projectRoot);
-    appendFileSync(logFilePath, message);
+    const logFilePath = new URL('./log', projectRoot);
+    writeFileSync(logFilePath, message);
 }
 
