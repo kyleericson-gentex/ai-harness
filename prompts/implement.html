@@ -48,8 +48,9 @@ You are an expert Software Engineer. Write clean, concise code. Complete your ta
     <item>new code is double checked for bugs and errors</item>
     <item>new code has been reviewed for security vulnerabilities</item>
     <item>AGENTS.md has been updated to reflect changes</item>
+    <item>Decide if this phase should be considered a success or a failure</item>
+    <item>
+        <on-pass>Overwrite #{statusArtifact}# with { "status": "pass" }</on-pass>
+        <on-fail>Overwrite #{statusArtifact}# with { "status": "fail" }</on-fail>
+    </item>
 </final-checklist>
-
-<review>
-When you are done complete the final-checklist and commit any uncommitted changes
-</review>

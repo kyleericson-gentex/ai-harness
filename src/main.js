@@ -5,6 +5,7 @@ import { exit } from 'process';
 
 
 let artifactLocation = "./.ai";
+let statusArtifact = `${artifactLocation}/status.json`;
 
 
 async function doWork(todos) {
@@ -12,6 +13,7 @@ async function doWork(todos) {
     let updatedTodos = [];
 
     for (let i = 0; i < todos.length; i++) {
+
         const todo = todos[i];
 
         if (todo.state && (todo.state === 'complete' || todo.state === 'on_hold')) {
@@ -22,30 +24,47 @@ async function doWork(todos) {
         let current = "discovery";
         let previous = null;
 
-
         console.log(`Todo: ${i + 1}/${todos.length}`);
         console.log(`Repo: ${todo.repo}`);
         console.log(`Objective: ${todo.objective}`);
 
         if(todo.state && todo.last) {
-            current = phaseDefinitions[todo.last].success;
+            current = phaseDefinitions[todo.lastCompletedPhase].success;
         } else {
-            todo.state = "new";
-            todo.last = "";
+            todo.state = "active";
+            todo.lastCompletedPhase = "";
             todo.result = "";
         }
 
-        console.log(`State: ${todo.state}`);
-        console.log(`Last: ${todo.last}`);
         console.log("");
 
+
+        let loopCounts = { }
 
         while(current !== todo.break && current !== null && current !== undefined) {
 
             const phaseDefinition = phaseDefinitions[current];
             const phaseWorkflow = phaseWorkflows[current];
+            const maxRetries = phaseDefinition.maxRetries || 0;
 
-            console.log(`--- Working on ${phaseDefinition.name}`);
+            if(loopCounts[phaseDefinition.name]) {
+                loopCounts[phaseDefinition.name]++;
+            } else {
+                loopCounts[phaseDefinition.name] = 0;
+            }
+
+            if(loopCounts[phaseDefinition.name] > maxRetries) {
+                console.log(`--- Retry limit reached for ${phaseDefinition.name}, stopping`);
+                todo.state = "stopped";
+                todo.result = "retry_limit_reached";
+                break;
+            }
+
+            if(loopCounts[phaseDefinition.name] > 0) {
+                console.log(`--- Working on ${phaseDefinition.name} retry ${loopCounts[phaseDefinition.name]}`);
+            } else {
+                console.log(`--- Working on ${phaseDefinition.name}`);
+            }
 
             let prompt = readPrompt(phaseDefinition.prompt);
 
@@ -53,6 +72,7 @@ async function doWork(todos) {
                 .replaceAll("#{objective}#", todo.objective)
                 .replaceAll("#{artifactLocation}#", artifactLocation)
                 .replaceAll("#{artifact}#", `${artifactLocation}/${phaseDefinition.artifact}`)
+                .replaceAll("#{statusArtifact}#", statusArtifact);
 
             if(previous) {
                 prompt = prompt.replaceAll("#{previousArtifact}#", `${artifactLocation}/${phaseDefinitions[previous].artifact || ""}`);
@@ -60,33 +80,29 @@ async function doWork(todos) {
                 prompt = prompt.replaceAll("#{previousArtifact}#", "HARNESS_ERROR");
             }
 
-            let { pass, stdout, stderr } = await runPrompt({
+            let { stdout, stderr } = await runPrompt({
                 repo: todo.repo,
                 prompt: prompt
             });
 
             previous = current;
+            todo.lastCompletedPhase = previous;
+            todo.result = readJson(statusArtifact).status.toLowerCase();
 
-            if(pass) {
+            if(todo.result === "pass") {
                 current = phaseWorkflow.success || null;
-                todo.result = "pass";
             } else {
                 current = phaseWorkflow.failure || null;
-                todo.result = "fail";
             }
 
         }
 
-        todo.last = previous;
-
         if (current === null) {
             todo.state = "complete";
-
+            todo.result = "success";
         } else if(current === todo.break) {
-            todo.state = "active";
-
-        } else {
-            todo.state = "error";
+            todo.state = "stopped";
+            todo.result = "breakpoint_reached";
         }
 
         updatedTodos.push(todo);
@@ -94,6 +110,8 @@ async function doWork(todos) {
 
     return updatedTodos;
 }
+
+
 
 try {
 

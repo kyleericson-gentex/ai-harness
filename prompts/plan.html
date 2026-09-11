@@ -58,6 +58,11 @@ You are a Senior Software Architect. Your responsibility is to understand the co
 
 <final-checklist>
     <item>#{artifact}# has been created</item>
+    <item>Decide if this phase should be considered a success or a failure</item>
+    <item>
+        <on-pass>Overwrite #{statusArtifact}# with { "status": "pass" }</on-pass>
+        <on-fail>Overwrite #{statusArtifact}# with { "status": "fail" }</on-fail>
+    </item>
     <item>artifacts created by planning have been committed</item>
 </final-checklist>
 

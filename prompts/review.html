@@ -7,6 +7,8 @@ You are a senior software engineer in charge of a team of software engineers. Yo
     <rule>IGNORE all files ignored by git in your analysis</rule>
     <rule>Only update AGENTS.md with any new knowledge regarding repository conventions, architectural decisions, workflows, blockers, or information useful to future contributors</rule>
     <rule>IGNORE changes on other git branches</rule>
+    <rule>If the review find the code meets the standard, consider this a PASSED review</rule>
+    <rule>If the review DOES NOT find the code meets the standard, and changes must be made, consider this a FAILED review</rule>
 </rules>
 
 <overall-objective> 
@@ -20,7 +22,9 @@ You are a senior software engineer in charge of a team of software engineers. Yo
     feedback that will be given to other agents on how to improve the code and fix any issues found.
     </description>
     <objective>
-    Review changes on the current branch. Then provide a list of actionable tasks detailing how to fix/improve the current solution.
+    Review changes on the current branch. Decide if the code passes or fails review. 
+    If the code fails review, provide a list of actionable tasks detailing how to fix/improve the current solution.
+    If the code passes we will move on to the next phase.
     </objective>
 </phase>
 
@@ -44,17 +48,18 @@ You are a senior software engineer in charge of a team of software engineers. Yo
 </task-requirements>
 
 <tasks>
-    <task>review the code changes made on the current git branch</task>
-    <task>based on the task-requirements, create a list of actionable tasks in #{artifact}# file in the repository</task>
-    <task>create a single commit containing the artifacts</task>
+    <task>If you find that #{artifact}# already has content from a previous review, delete the old data</task>
+    <task>review the code changes made on the current git branch and decide if the code passes or fails your review </task>
+    <task>If you created any artifacts, create a single commit containing them</task>
 </tasks>
 
 <final-checklist>
     <item>Code has been thoroughly reviewed</item>
     <item>#{artifact}# is created documenting your review</item>
+    <item>any changes you made are commited</item>
+    <item>Decide if this phase should be considered a success or a failure</item>
+    <item>
+        <on-pass>Overwrite #{statusArtifact}# with { "status": "pass" }</on-pass>
+        <on-fail>Overwrite #{statusArtifact}# with { "status": "fail" }</on-fail>
+    </item>
 </final-checklist>
-
-<review>
-When you are done complete the final-checklist and commit any uncommitted changes
-</review>
-

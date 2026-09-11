@@ -16,14 +16,14 @@ export const phaseWorkflows = {
     },
 
     implement: {
-        success: null,
+        success: "review",
         failure: null
-    }
+    },
 
-    // review: {
-    //     success: null,
-    //     failure: "implement"
-    // },
+    review: {
+        success: null,
+        failure: "implement"
+    }
 
 };
 
@@ -33,6 +33,7 @@ export const phaseDefinitions = {
         name: "discovery",
         prompt: "discovery.html",
         artifact: "discovery.md",
+        maxRetries: -1
     },
 
     plan: {
@@ -52,10 +53,11 @@ export const phaseDefinitions = {
         prompt: "implement.html",
     },
 
-    // review: {
-    //     name: "review",
-    //     prompt: "review.html",
-    //     artifact: "fixlist.md",
-    // },
+    review: {
+        name: "review",
+        prompt: "review.html",
+        artifact: "fixlist.md",
+        maxRetries: 3
+    },
 
 };

@@ -53,8 +53,10 @@ Your responsibility is to understand the codebase and identify the areas relevan
     <item>Code has been analyzed and understood</item>
     <item>AGENTS.md file has been created/updated</item>
     <item>#{artifact}# is created</item>
+    <item>any changes you made are commited</item>
+    <item>Decide if this phase should be considered a success or a failure</item>
+    <item>
+        <on-pass>Overwrite #{statusArtifact}# with { "status": "pass" }</on-pass>
+        <on-fail>Overwrite #{statusArtifact}# with { "status": "fail" }</on-fail>
+    </item>
 </final-checklist>
-
-<review>
-When you are done complete the final-checklist and commit any uncommitted changes
-</review>

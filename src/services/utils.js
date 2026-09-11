@@ -1,11 +1,11 @@
-import { appendFileSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
 
 
 const projectRoot = new URL('../../', import.meta.url);
 
 
 
-export function promptUser({ question, rlInterface }) {
+function promptUser({ question, rlInterface }) {
     return new Promise((resolve) => {
         rlInterface.question(question, (answer) => {
             resolve(answer);
@@ -14,32 +14,38 @@ export function promptUser({ question, rlInterface }) {
 }
 
 
-export function readBacklog() {
-    try {
-        const content = readFileSync(
-            new URL(`./backlog.json`, projectRoot),
-            'utf8'
-        );
-        return JSON.parse(content);
+function readFile(path) {
+    return readFileSync(path, 'utf8');
+}
 
+
+function readJson(path) {
+    try {
+        const content = readFileSync(path, 'utf8');
+        return JSON.parse(content);
     } catch {
-        console.log("Error: Failed to read json config");
+        console.log("Error: Failed to read json file");
+        return null;
     }
 }
 
-export function writeBacklog(data) {
+function writeJson(data, path) {
     try {
-        writeFileSync(
-            new URL(`./backlog.json`, projectRoot),
-            JSON.stringify(data),
-            'utf8'
-        );
+        writeFileSync(path, JSON.stringify(data), 'utf8');
         return true;
-
     } catch (err) {
         console.log("Error: Failed to read json config", err);
         return false;
     }
+}
+
+
+export function readBacklog() {
+    return readJson(new URL(`./backlog.json`, projectRoot));
+}
+
+export function writeBacklog(data) {
+    return writeJson(data, new URL(`./backlog.json`, projectRoot));
 }
 
 
@@ -54,11 +60,9 @@ export function validateBreakpoint(bp, max) {
 }
 
 
+
 export function readPrompt(file) {
-    return readFileSync(
-        new URL(`./prompts/${file}`, projectRoot),
-        'utf8'
-    );
+    return readFile(new URL(`./prompts/${file}`));
 }
 
 

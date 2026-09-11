@@ -54,8 +54,9 @@ You are a senior software architect charged with creating tasks for other softwa
 <final-checklist>
     <item>#{artifact}# has been created</item>
     <item>artifacts created by task creation have been committed</item>
+    <item>Decide if this phase should be considered a success or a failure</item>
+    <item>
+        <on-pass>Overwrite #{statusArtifact}# with { "status": "pass" }</on-pass>
+        <on-fail>Overwrite #{statusArtifact}# with { "status": "fail" }</on-fail>
+    </item>
 </final-checklist>
-
-<review>
-When you are done complete the final-checklist and commit any uncommitted changes
-</review>
