@@ -19,7 +19,7 @@ function readFile(path) {
 }
 
 
-function readJson(path) {
+export function readJson(path) {
     try {
         const content = readFileSync(path, 'utf8');
         return JSON.parse(content);
@@ -29,7 +29,7 @@ function readJson(path) {
     }
 }
 
-function writeJson(data, path) {
+export function writeJson(data, path) {
     try {
         writeFileSync(path, JSON.stringify(data), 'utf8');
         return true;
@@ -62,12 +62,22 @@ export function validateBreakpoint(bp, max) {
 
 
 export function readPrompt(file) {
-    return readFile(new URL(`./prompts/${file}`));
+    return readFile(new URL(`./prompts/${file}`, projectRoot));
 }
 
 
-export function log({ message }) {
-    const logFilePath = new URL('./log', projectRoot);
-    writeFileSync(logFilePath, message);
+export function getTimestamp() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}${month}${day}${hours}${minutes}`;
+}
+
+
+export function getTimestampMs() {
+    return new Date();
 }
 

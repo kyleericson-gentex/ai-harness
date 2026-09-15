@@ -1,11 +1,12 @@
-import { readPrompt, readBacklog, writeBacklog, log } from './services/utils.js';
-import { runPrompt } from './services/ai.js';
+
+import { readPrompt, readBacklog, writeBacklog, readJson, getTimestamp } from './services/utils.js';
+import { executePrompt } from './services/ai.js';
 import { phaseDefinitions, phaseWorkflows } from './phases.js';
-import { exit } from 'process';
+import { logger } from './services/logger.js';
 
 
-let artifactLocation = "./.ai";
-let statusArtifact = `${artifactLocation}/status.json`;
+let artifactRoot = "./.ai";
+let statusArtifact = `status.json`;
 
 
 async function doWork(todos) {
@@ -16,6 +17,8 @@ async function doWork(todos) {
 
         const todo = todos[i];
 
+        const sessionId = getTimestamp();
+
         if (todo.state && (todo.state === 'complete' || todo.state === 'on_hold')) {
             updatedTodos.push(todo);
             continue;
@@ -24,11 +27,12 @@ async function doWork(todos) {
         let current = "discovery";
         let previous = null;
 
-        console.log(`Todo: ${i + 1}/${todos.length}`);
-        console.log(`Repo: ${todo.repo}`);
-        console.log(`Objective: ${todo.objective}`);
+        logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
+        logger.app.info({ message: `Session: ${sessionId}` });
+        logger.app.info({ message: `Repo: ${todo.repo}` });
+        logger.app.info({ message: `Objective: ${todo.objective}\n` });
 
-        if(todo.state && todo.last) {
+        if (todo.state && todo.last) {
             current = phaseDefinitions[todo.lastCompletedPhase].success;
         } else {
             todo.state = "active";
@@ -36,60 +40,65 @@ async function doWork(todos) {
             todo.result = "";
         }
 
-        console.log("");
+        let loopCounts = {}
 
-
-        let loopCounts = { }
-
-        while(current !== todo.break && current !== null && current !== undefined) {
+        while (current !== todo.break && current !== null && current !== undefined) {
 
             const phaseDefinition = phaseDefinitions[current];
             const phaseWorkflow = phaseWorkflows[current];
             const maxRetries = phaseDefinition.maxRetries || 0;
 
-            if(loopCounts[phaseDefinition.name]) {
+            if (loopCounts[phaseDefinition.name]) {
                 loopCounts[phaseDefinition.name]++;
             } else {
                 loopCounts[phaseDefinition.name] = 0;
             }
 
-            if(loopCounts[phaseDefinition.name] > maxRetries) {
-                console.log(`--- Retry limit reached for ${phaseDefinition.name}, stopping`);
+            if (loopCounts[phaseDefinition.name] > maxRetries) {
+                logger.app.info({ message: `Retry limit reached for ${phaseDefinition.name}, stopping` });
                 todo.state = "stopped";
                 todo.result = "retry_limit_reached";
                 break;
             }
 
-            if(loopCounts[phaseDefinition.name] > 0) {
-                console.log(`--- Working on ${phaseDefinition.name} retry ${loopCounts[phaseDefinition.name]}`);
+            if (loopCounts[phaseDefinition.name] > 0) {
+                logger.app.info({ message: `${phaseDefinition.name} retry ${loopCounts[phaseDefinition.name]}\n` });
             } else {
-                console.log(`--- Working on ${phaseDefinition.name}`);
+                logger.app.info({ message: `${phaseDefinition.name}\n` });
             }
 
             let prompt = readPrompt(phaseDefinition.prompt);
 
             prompt = prompt
                 .replaceAll("#{objective}#", todo.objective)
-                .replaceAll("#{artifactLocation}#", artifactLocation)
-                .replaceAll("#{artifact}#", `${artifactLocation}/${phaseDefinition.artifact}`)
-                .replaceAll("#{statusArtifact}#", statusArtifact);
+                .replaceAll("#{artifactLocation}#", `${artifactRoot}/${sessionId}`)
+                .replaceAll("#{artifact}#", `${artifactRoot}/${sessionId}/${phaseDefinition.artifact}`)
+                .replaceAll("#{statusArtifact}#", `${artifactRoot}/${sessionId}/${statusArtifact}`);
 
-            if(previous) {
-                prompt = prompt.replaceAll("#{previousArtifact}#", `${artifactLocation}/${phaseDefinitions[previous].artifact || ""}`);
+            if (previous) {
+                prompt = prompt.replaceAll("#{previousArtifact}#", `${artifactRoot}/${sessionId}/${phaseDefinitions[previous].artifact || ""}`);
             } else {
                 prompt = prompt.replaceAll("#{previousArtifact}#", "HARNESS_ERROR");
             }
 
-            let { stdout, stderr } = await runPrompt({
+
+            const result = await executePrompt({
                 repo: todo.repo,
-                prompt: prompt
+                prompt: prompt,
             });
+
+
+            if (result.code !== 0) {
+                console.error(`Something went wrong: ${result.stderr}`);
+                process.exit(result.code);
+            }
+
 
             previous = current;
             todo.lastCompletedPhase = previous;
-            todo.result = readJson(statusArtifact).status.toLowerCase();
+            todo.result = readJson(`${todo.repo}/${artifactRoot}/${sessionId}/${statusArtifact}`).status.toLowerCase();
 
-            if(todo.result === "pass") {
+            if (todo.result === "pass") {
                 current = phaseWorkflow.success || null;
             } else {
                 current = phaseWorkflow.failure || null;
@@ -100,9 +109,10 @@ async function doWork(todos) {
         if (current === null) {
             todo.state = "complete";
             todo.result = "success";
-        } else if(current === todo.break) {
+        } else if (current === todo.break) {
             todo.state = "stopped";
             todo.result = "breakpoint_reached";
+            logger.app.info({ message: "breakpoint reached" });
         }
 
         updatedTodos.push(todo);
@@ -114,18 +124,12 @@ async function doWork(todos) {
 
 
 try {
-
-    console.log("\nClocking in");
-    console.log("-----------\n");
-
+    logger.app.info({ message: "Clocking in\n" });
     const board = readBacklog();
     const updatedBoard = { todos: await doWork(board.todos) };
     writeBacklog(updatedBoard);
-
-    console.log("\nClocking out");
-    console.log("------------\n");
-
+    logger.app.info({ message: "Clocking out" });
 } catch (error) {
-    console.error('Error:', error);
+    logger.app.error({ message: `Error: ${error}` });
 } finally {
 }

@@ -33,7 +33,6 @@ export const phaseDefinitions = {
         name: "discovery",
         prompt: "discovery.html",
         artifact: "discovery.md",
-        maxRetries: -1
     },
 
     plan: {
