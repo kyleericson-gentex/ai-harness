@@ -81,3 +81,16 @@ export function getTimestampMs() {
     return new Date();
 }
 
+
+export function replaceTokens({ content, left = "#{", right = "}#", tokens }) {
+    let replaced = content;
+    tokens.forEach((e) => {
+        replaced = replaced.replaceAll(`${left}${e.token}${right}`, e.value);
+    });
+    return replaced;
+}
+
+
+
+
+

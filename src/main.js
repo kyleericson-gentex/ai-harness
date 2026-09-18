@@ -1,5 +1,5 @@
 
-import { readPrompt, readBacklog, writeBacklog, readJson, getTimestamp } from './services/utils.js';
+import { readPrompt, readBacklog, writeBacklog, readJson, getTimestamp, replaceTokens } from './services/utils.js';
 import { executePrompt } from './services/ai.js';
 import { phaseDefinitions, phaseWorkflows } from './phases.js';
 import { logger } from './services/logger.js';
@@ -17,7 +17,7 @@ async function doWork(todos) {
 
         const todo = todos[i];
 
-        const sessionId = getTimestamp();
+        const timestamp = getTimestamp();
 
         if (todo.state && (todo.state === 'complete' || todo.state === 'on_hold')) {
             updatedTodos.push(todo);
@@ -28,11 +28,12 @@ async function doWork(todos) {
         let previous = null;
 
         logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
-        logger.app.info({ message: `Session: ${sessionId}` });
+        logger.app.info({ message: `Session: ${timestamp}` });
         logger.app.info({ message: `Repo: ${todo.repo}` });
         logger.app.info({ message: `Objective: ${todo.objective}\n` });
 
-        if (todo.state && todo.last) {
+        if (todo.state && todo.lastCompletedPhase) {
+            previous = todo.lastCompletedPhase
             current = phaseDefinitions[todo.lastCompletedPhase].success;
         } else {
             todo.state = "active";
@@ -67,20 +68,17 @@ async function doWork(todos) {
                 logger.app.info({ message: `${phaseDefinition.name}\n` });
             }
 
-            let prompt = readPrompt(phaseDefinition.prompt);
 
-            prompt = prompt
-                .replaceAll("#{objective}#", todo.objective)
-                .replaceAll("#{artifactLocation}#", `${artifactRoot}/${sessionId}`)
-                .replaceAll("#{artifact}#", `${artifactRoot}/${sessionId}/${phaseDefinition.artifact}`)
-                .replaceAll("#{statusArtifact}#", `${artifactRoot}/${sessionId}/${statusArtifact}`);
-
-            if (previous) {
-                prompt = prompt.replaceAll("#{previousArtifact}#", `${artifactRoot}/${sessionId}/${phaseDefinitions[previous].artifact || ""}`);
-            } else {
-                prompt = prompt.replaceAll("#{previousArtifact}#", "HARNESS_ERROR");
-            }
-
+            let prompt = replaceTokens({
+                content: readPrompt(phaseDefinition.prompt),
+                tokens: [
+                    { token: "objective",        value: todo.objective },
+                    { token: "artifactLocation", value: `${artifactRoot}/${timestamp}` },
+                    { token: "artifact",         value: `${artifactRoot}/${timestamp}/${phaseDefinition.artifact}` },
+                    { token: "statusArtifact",   value: `${artifactRoot}/${timestamp}/${statusArtifact}` },
+                    { token: "previousArtifact", value: previous ? `${artifactRoot}/${timestamp}/${phaseDefinitions[previous].artifact}` : "HARNESS_ERROR" }
+                ]
+            });
 
             const result = await executePrompt({
                 repo: todo.repo,
@@ -96,7 +94,7 @@ async function doWork(todos) {
 
             previous = current;
             todo.lastCompletedPhase = previous;
-            todo.result = readJson(`${todo.repo}/${artifactRoot}/${sessionId}/${statusArtifact}`).status.toLowerCase();
+            todo.result = readJson(`${todo.repo}/${artifactRoot}/${timestamp}/${statusArtifact}`).status.toLowerCase();
 
             if (todo.result === "pass") {
                 current = phaseWorkflow.success || null;
