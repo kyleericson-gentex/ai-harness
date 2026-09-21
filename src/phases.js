@@ -1,32 +1,4 @@
 
-export const phaseWorkflows = {
-    discovery: {
-        success: "plan",
-        failure: null
-    },
-
-    plan: {
-        success: "create_tasks",
-        failure: null
-    },
-
-    create_tasks: {
-        success: "implement",
-        failure: null
-    },
-
-    implement: {
-        success: "review",
-        failure: null
-    },
-
-    review: {
-        success: null,
-        failure: "implement"
-    }
-
-};
-
 export const phaseDefinitions = {
 
     discovery: {

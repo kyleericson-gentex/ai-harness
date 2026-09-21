@@ -39,16 +39,6 @@ export function writeJson(data, path) {
     }
 }
 
-
-export function readBacklog() {
-    return readJson(new URL(`./backlog.json`, projectRoot));
-}
-
-export function writeBacklog(data) {
-    return writeJson(data, new URL(`./backlog.json`, projectRoot));
-}
-
-
 export function validateBreakpoint(bp, max) {
     let breakpoint = bp;
     if (breakpoint === undefined) {
@@ -91,6 +81,17 @@ export function replaceTokens({ content, left = "#{", right = "}#", tokens }) {
 }
 
 
+export function joinObjects(objs) {
+    let ret = {};
 
+    objs.forEach((o) => {
+        if(o) {
+            for(const key of Object.keys(o)) {
+                ret[key] = o[key];
+            }
+        }
+    });
 
+    return ret;
+}
 

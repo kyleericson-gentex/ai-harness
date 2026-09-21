@@ -1,9 +1,17 @@
-# ai harness
+# IT AI-ntern
 
-Repo for my own ai harness for developing features. Not sure how useful this would be for actual development, but just learning what I can 
-beyond just using Copilot-CLI and autopilot.
+Want to suck all the joy out of programming? You've come to the right place.
+This harness will let the AI do the fun part and leaves the boring part to you!
 
-This runs a series of "phases" (which are driven by different agent prompts) that cover a development pipeline: 
+Just pretend to review the code, push it, and tell everyone you wrote it yourself.
+
+(This is a learning project. Not sure how useful this would be for actual development.
+I am just learning what I can beyond just using Copilot-CLI and autopilot)
+
+
+## about
+
+This runs a series of "phases" (which are just prompts) that cover a development pipeline: 
 
 - [discovery](./prompts/discovery.html)
 - [plan](./prompts/plan.html)
@@ -11,7 +19,7 @@ This runs a series of "phases" (which are driven by different agent prompts) tha
 - [implement](./prompts/implement.html)
 - [review](./prompts/review.html)
 
-Thats all I have for now
+Thats all I have for now.
 
 The phase definitions and their workflow is defined [here](./src/phases.js)
 
@@ -23,7 +31,12 @@ The phase definitions and their workflow is defined [here](./src/phases.js)
 
 - make sure you have github copilot cli working
 - create a `backlog.json` file in this project's root folder (this file is ignored by git)
-- run with `node ./src/main.js`
+- run `node ./main.js`
+
+you can also edit `main.js` to change the backlog file location and inject your own custom workflows.
+The standard workflows and custom workflows will be merged.
+
+
 
 
 ## backlog.json
@@ -52,6 +65,11 @@ phase, or changing the state to skip a todo.
     // the phase you would like the harness to stop at
     // will stop just before this phase
     "break": "",
+
+    // optional
+    // the workflow you would like to use
+    // default is 'standard'
+    "workflow": "",
 
     // optional
     // the current state of this todo
@@ -92,6 +110,7 @@ phase, or changing the state to skip a todo.
         },
         {
             "repo": "path/to/local/project/repository",
+            "workflow": "custom",
             "objective": "improve documentation"
         },
         {
@@ -105,12 +124,70 @@ phase, or changing the state to skip a todo.
 ```
 
 
+#### phases and workflows
+
+
+Phase definitions example
+```js
+{
+    discovery: {
+        name: "discovery",
+        prompt: "discovery.html",
+        artifact: "discovery.md",
+    },
+
+    plan: {
+        name: "plan",
+        prompt: "plan.html",
+        artifact: "plan.md",
+    },
+}
+```
+
+
+Workflow example
+```js
+{
+    standard: {
+        start: "discovery",
+
+        discovery: {
+            // phase to run after success, null quits
+            success: "plan",
+            // phase to run after failure, null quits
+            failure: null,
+            // pre phase hook
+            before: async function() {},
+            // post phase hook, will always run, even after failure
+            after: async function() {}
+        },
+
+        plan: {
+            success: null,
+            failure: null,
+        }
+    }
+}
+```
+
+Custom Workflows
+```js
+
+run({ 
+    backlog: "path/to/backlog/file.json",
+    customWorkflows:  { 
+        // custom workflow definitions added here 
+    }
+});
+
+```
+
+
+
 ## future stuff?
 
-- clone repos instead of having to already have them locally
-- poll azure and pull todos from special azure work items
-- push changes to remote
-- might be cool to add pre and post phase hooks to the phase definitions to run code between each phase
-- test phase with test results looping back into implement like review does
-- shoot myself a text or email with gentex notification service when errors happen?
+- [ ] clone repos instead of having to already have them locally
+- [ ] poll azure and pull todos from special azure work items
+- [ ] push changes to remote
+- [ ] test phase with test results looping back into implement like review does
 
