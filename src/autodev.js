@@ -1,4 +1,4 @@
-import { readPrompt, readJson, writeJson, getTimestamp, replaceTokens, joinObjects } from './services/utils.js';
+import { readFile, readJson, writeJson, getTimestamp, replaceTokens, joinObjects } from './services/utils.js';
 import { executePrompt } from './services/ai.js';
 import { phaseDefinitions } from './phases.js';
 import { workflows } from './workflows.js';
@@ -53,83 +53,81 @@ async function doWork(todos, flows) {
             current = wf.start;
         }
 
-        let loopCounts = {}
+        let phaseLoops = {};
+        let totalLoops = 0;
 
-        while (current !== todo.break && current !== null && current !== undefined) {
+        while (totalLoops < 25 && current !== todo.break && current !== null && current !== undefined) {
 
             const phase = {
-                data: phaseDefinitions[current],
-                workflow: wf
+                definition: phaseDefinitions[current],
+                wfData: wf[current]
             };
 
-            const maxRetries = phase.data.maxRetries || 0;
+            const maxRetries = phase.wfData.maxRetries || 0;
 
-            if (loopCounts[phase.data.name]) {
-                loopCounts[phase.data.name]++;
+            if (phaseLoops[current] === undefined || phaseLoops[current] === null) {
+                phaseLoops[current] = 0;
             } else {
-                loopCounts[phase.data.name] = 0;
+                phaseLoops[current]++;
             }
 
-            if (loopCounts[phase.data.name] > maxRetries) {
-                logger.app.info({ message: `Retry limit reached for ${phase.data.name}, stopping` });
+            if (phaseLoops[current] > maxRetries) {
+                logger.app.info({ message: `Retry limit reached for ${current}, stopping` });
                 todo.state = "stopped";
                 todo.result = "retry_limit_reached";
                 break;
             }
 
-            if (loopCounts[phase.data.name] > 0) {
-                logger.app.info({ message: `${phase.data.name} retry ${loopCounts[phase.data.name]}\n` });
+            if (phaseLoops[current] > 0) {
+                logger.app.info({ message: `${current} retry ${phaseLoops[current]}\n` });
             } else {
-                logger.app.info({ message: `${phase.data.name}\n` });
+                logger.app.info({ message: `${current}\n` });
             }
 
 
             let prompt = replaceTokens({
-                content: readPrompt(phase.data.prompt),
+                content: readFile(`${phase.definition.prompt}`),
                 tokens: [
                     { token: "objective",        value: todo.objective },
                     { token: "artifactLocation", value: `${artifactRoot}/${timestamp}` },
-                    { token: "artifact",         value: `${artifactRoot}/${timestamp}/${phase.data.artifact}` },
+                    { token: "artifact",         value: `${artifactRoot}/${timestamp}/${phase.definition.artifact}` },
                     { token: "statusArtifact",   value: `${artifactRoot}/${timestamp}/${statusArtifact}` },
                     { token: "previousArtifact", value: previous ? `${artifactRoot}/${timestamp}/${phaseDefinitions[previous].artifact}` : "HARNESS_ERROR" }
                 ]
             });
 
-            if(phase.workflow[current].before) {
-                await phase.workflow[current].before();
+            if(phase.wfData.before) {
+                await phase.wfData.before();
             }
 
-            // const result = await executePrompt({
-            //     repo: todo.repo,
-            //     prompt: prompt,
-            // });
+            const result = await executePrompt({
+                repo: todo.repo,
+                prompt: prompt,
+            });
 
-            if(phase.workflow[current].after) {
-                await phase.workflow[current].after();
+            if(phase.wfData.after) {
+                await phase.wfData.after();
             }
-
-            // todo:debug:
-            process.exit()
 
             if (result.code !== 0) {
                 logger.app.error(`Something went wrong: ${result.stderr}`);
                 process.exit(result.code);
             }
 
-
             previous = current;
             todo.lastCompletedPhase = previous;
             todo.result = readJson(`${todo.repo}/${artifactRoot}/${timestamp}/${statusArtifact}`).status.toLowerCase();
 
             if (todo.result === "pass") {
-                current = phase.workflow.success || null;
+                current = phase.wfData.success || null;
             } else {
-                current = phase.workflow.failure || null;
+                current = phase.wfData.failure || null;
             }
 
+            totalLoops++;
         }
 
-        if (current === null) {
+        if (current === null || current === undefined) {
             todo.state = "complete";
             todo.result = "success";
         } else if (current === todo.break) {

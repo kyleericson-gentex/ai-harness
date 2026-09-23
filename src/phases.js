@@ -3,32 +3,31 @@ export const phaseDefinitions = {
 
     discovery: {
         name: "discovery",
-        prompt: "discovery.html",
+        prompt: "./prompts/discovery.html",
         artifact: "discovery.md",
     },
 
     plan: {
         name: "plan",
-        prompt: "plan.html",
+        prompt: "./prompts/plan.html",
         artifact: "plan.md",
     },
 
     create_tasks: {
         name: "create_tasks",
-        prompt: "create_tasks.html",
+        prompt: "./prompts/create_tasks.html",
         artifact: "create_tasks.md",
     },
 
     implement: {
         name: "implement",
-        prompt: "implement.html",
+        prompt: "./prompts/implement.html",
     },
 
     review: {
         name: "review",
-        prompt: "review.html",
+        prompt: "./prompts/review.html",
         artifact: "fixlist.md",
-        maxRetries: 3
     },
 
 };

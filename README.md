@@ -33,10 +33,8 @@ The phase definitions and their workflow is defined [here](./src/phases.js)
 - create a `backlog.json` file in this project's root folder (this file is ignored by git)
 - run `node ./main.js`
 
-you can also edit `main.js` to change the backlog file location and inject your own custom workflows.
-The standard workflows and custom workflows will be merged.
-
-
+- you can also edit `main.js` to change the backlog location and inject your own workflows
+  more on workflows below
 
 
 ## backlog.json
@@ -127,62 +125,46 @@ phase, or changing the state to skip a todo.
 #### phases and workflows
 
 
-Phase definitions example
+Phase Definition example
 ```js
 {
+    // key
     discovery: {
+        // name of phase, must match key
         name: "discovery",
-        prompt: "discovery.html",
+        // path to prompt file to use
+        prompt: "./prompts/example.html",
+        // the file name of the artifact
+        // the default settings puts artifacts in the repo folder at <repo>/.ai/<timestamp>/
         artifact: "discovery.md",
     },
-
-    plan: {
-        name: "plan",
-        prompt: "plan.html",
-        artifact: "plan.md",
-    },
 }
 ```
 
-
-Workflow example
+Phase Workflow example
 ```js
 {
+    // key/name of the workflow
     standard: {
+    
+        // phase to start with
         start: "discovery",
 
+        // key
         discovery: {
-            // phase to run after success, null quits
-            success: "plan",
-            // phase to run after failure, null quits
-            failure: null,
-            // pre phase hook
-            before: async function() {},
-            // post phase hook, will always run, even after failure
-            after: async function() {}
-        },
-
-        plan: {
+            // key of phase to run after success, null quits
             success: null,
+            // key of phase to run after failure, null quits
             failure: null,
+            // runs this code before phase execution
+            before: async function() {},
+            // runs this code after phase execution
+            after: async function() {}
         }
+
     }
 }
 ```
-
-Custom Workflows
-```js
-
-run({ 
-    backlog: "path/to/backlog/file.json",
-    customWorkflows:  { 
-        // custom workflow definitions added here 
-    }
-});
-
-```
-
-
 
 ## future stuff?
 

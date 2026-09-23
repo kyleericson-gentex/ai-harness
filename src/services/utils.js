@@ -14,7 +14,7 @@ function promptUser({ question, rlInterface }) {
 }
 
 
-function readFile(path) {
+export function readFile(path) {
     return readFileSync(path, 'utf8');
 }
 
@@ -47,12 +47,6 @@ export function validateBreakpoint(bp, max) {
         console.log(`Error: ${breakpoint} is not a valid breakpoint, must be a valid number (0 - ${max - 1})`);
     }
     return breakpoint;
-}
-
-
-
-export function readPrompt(file) {
-    return readFile(new URL(`./prompts/${file}`, projectRoot));
 }
 
 
