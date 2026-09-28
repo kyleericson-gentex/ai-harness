@@ -1,6 +1,6 @@
 import { run } from './src/autodev.js';
 
 run({ 
-    backlog: './backlog.json',
+    backlogPath: './.local/test_bl.json',
+    repoRegPath: './.local/repositories.json'
 });
-

@@ -1,5 +1,3 @@
-import { notify } from './services/notifications.js';
-import { logger } from './services/logger.js';
 
 export const workflows = {
 
@@ -25,6 +23,7 @@ export const workflows = {
         implement: {
             success: "review",
             failure: null,
+            maxRetries: 3
         },
 
         review: {

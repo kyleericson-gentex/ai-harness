@@ -1,5 +1,4 @@
-*.json
-*.log
+.local/
 log
 .ai/
 AGENTS.md

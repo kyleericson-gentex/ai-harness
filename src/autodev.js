@@ -1,7 +1,7 @@
-import { readFile, readJson, writeJson, getTimestamp, replaceTokens, joinObjects } from './services/utils.js';
+import { readFile, readJson, writeJson, getTimestamp, replaceTokens } from './services/utils.js';
 import { executePrompt } from './services/ai.js';
 import { phaseDefinitions } from './phases.js';
-import { workflows } from './workflows.js';
+import { workflowService } from './services/workflow.js';
 import { logger } from './services/logger.js';
 
 
@@ -9,9 +9,7 @@ let artifactRoot = "./.ai";
 let statusArtifact = `status.json`;
 
 
-
-
-async function doWork(todos, flows) {
+async function doWork(todos, repos) {
 
     let updatedTodos = [];
 
@@ -26,22 +24,22 @@ async function doWork(todos, flows) {
 
         const timestamp = getTimestamp();
 
+        const repo = repos[todo.repo];
+
         logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
         logger.app.info({ message: `Session: ${timestamp}` });
-        logger.app.info({ message: `Repo: ${todo.repo}` });
+        logger.app.info({ message: `Repo: ${repo}` });
         logger.app.info({ message: `Objective: ${todo.objective}\n` });
 
-        let wfName = todo.workflow || "standard";
-        let wf = flows[wfName];
-        let current = null;
-        let previous = null;
 
+        let wf = workflowService.get(todo.workflow);
         if (!wf) {
-            logger.app.error({ message: `Workflow ${wfName} not found` });
             updatedTodos.push(todo);
             continue;
         }
 
+        let current = null;
+        let previous = null;
 
         if (todo.state && todo.lastCompletedPhase) {
             previous = todo.lastCompletedPhase
@@ -52,6 +50,7 @@ async function doWork(todos, flows) {
             todo.result = "";
             current = wf.start;
         }
+
 
         let phaseLoops = {};
         let totalLoops = 0;
@@ -101,7 +100,7 @@ async function doWork(todos, flows) {
             }
 
             const result = await executePrompt({
-                repo: todo.repo,
+                repo: repo,
                 prompt: prompt,
             });
 
@@ -116,7 +115,7 @@ async function doWork(todos, flows) {
 
             previous = current;
             todo.lastCompletedPhase = previous;
-            todo.result = readJson(`${todo.repo}/${artifactRoot}/${timestamp}/${statusArtifact}`).status.toLowerCase();
+            todo.result = readJson(`${repo}/${artifactRoot}/${timestamp}/${statusArtifact}`).status.toLowerCase();
 
             if (todo.result === "pass") {
                 current = phase.wfData.success || null;
@@ -143,16 +142,18 @@ async function doWork(todos, flows) {
 }
 
 
-export async function run({ backlog, customWorkflows }) {
+export async function run({ backlogPath, repoRegPath, customWorkflows }) {
     try {
 
-        let allWorkflows = joinObjects([ workflows, customWorkflows ]);
+        workflowService.add(customWorkflows);
 
         logger.app.info({ message: "Clocking in\n" });
-        const board = readJson(backlog);
+
+        const board = readJson(backlogPath);
+        const repos = readJson(repoRegPath);
 
         const updatedBoard = { 
-            todos: await doWork(board.todos, allWorkflows)
+            todos: await doWork(board.todos, repos)
         };
 
         writeJson(updatedBoard, backlog);
@@ -164,3 +165,4 @@ export async function run({ backlog, customWorkflows }) {
 
     }
 }
+
