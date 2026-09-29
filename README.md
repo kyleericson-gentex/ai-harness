@@ -13,15 +13,15 @@ I am just learning what I can beyond just using Copilot-CLI and autopilot)
 
 This runs a series of "phases" (which are just prompts) that cover a development pipeline: 
 
-- [discovery](./prompts/discovery.html)
-- [plan](./prompts/plan.html)
-- [create_tasks](./prompts/create_tasks.html)
-- [implement](./prompts/implement.html)
-- [review](./prompts/review.html)
+- [discovery](./server/prompts/discovery.html)
+- [plan](./server/prompts/plan.html)
+- [create_tasks](./server/prompts/create_tasks.html)
+- [implement](./server/prompts/implement.html)
+- [review](./server/prompts/review.html)
 
 Thats all I have for now.
 
-The phase definitions and their workflow is defined [here](./src/phases.js)
+The phase definitions and their workflow is defined [here](./server/phases.js)
 
 
 `!!NOTE!! for now, this uses the copilot cli flag '--allow-all' so you know, be careful or whatever`
@@ -30,21 +30,42 @@ The phase definitions and their workflow is defined [here](./src/phases.js)
 ## usage
 
 - make sure you have github copilot cli working
-- create a `backlog.json` file in this project's root folder (this file is ignored by git)
-- run `node ./main.js`
+- create a `./.data/backlog.json` file in this project's root folder (this file is ignored by git)
+- cd into `./server`
+- run `npm install`
+- run `npm start` to start the server
+- server can be hit at `localhost:42069`
 
-- you can also edit `main.js` to change the backlog location and inject your own workflows
-  more on workflows below
+
+## api
+
+
+Get the backlog
+```
+GET localhost:42069/backlog
+```
+
+Run each todo in the entire backlog
+```
+POST localhost:42069/backlog/run
+```
+
+
 
 
 ## backlog.json
 
-A backlog.json file is a list of "todos" you want to automate. You can think of it like the kanban board.
+Should be located in the project directory at: `./.data/backlog.json`
+
+This file is ignored by git. 
+
+The backlog.json file is just a list of todos
 
 This file will also be updated by the harness to update the state of the todos as they are being run.
 
 You can manipulate these yourself as needed. For example adding a break point or changing the `lastCompletedPhase` to start from a specific
 phase, or changing the state to skip a todo.
+
 
 
 #### todo object
@@ -172,4 +193,5 @@ Phase Workflow example
 - [ ] poll azure and pull todos from special azure work items
 - [ ] push changes to remote
 - [ ] test phase with test results looping back into implement like review does
+- [ ] fun ui to view status of agents and stuff?
 

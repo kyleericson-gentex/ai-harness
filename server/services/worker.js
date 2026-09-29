@@ -1,17 +1,17 @@
-import { readFile, getTimestamp, replaceTokens } from './services/utils.js';
-import { executePrompt } from './services/ai.js';
-import { phaseDefinitions } from './phases.js';
-import { workflowService } from './services/workflow.js';
-import { todoService } from './services/todo.js';
-import { repoService } from './services/repo.js';
-import { logger } from './services/logger.js';
+import { readFile, getTimestamp, replaceTokens } from './utils.js';
+import { executePrompt } from './ai.js';
+import { phaseDefinitions } from '../phases.js';
+import { workflowService } from './workflow.js';
+import { repoService } from './repo.js';
+import { logger } from './logger.js';
 
 
 
-export async function clockIn() {
+export async function clockIn({ todos }) {
+
+    logger.app.info({ message: "Clocking in\n" });
 
     let updatedTodos = [];
-    const todos = todoService.get();
 
     for (let i = 0; i < todos.length; i++) {
 
@@ -135,6 +135,7 @@ export async function clockIn() {
         updatedTodos.push(todo);
     }
 
+    logger.app.info({ message: "Clocking out" });
     return updatedTodos;
 }
 

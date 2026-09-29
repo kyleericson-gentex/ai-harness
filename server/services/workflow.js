@@ -7,11 +7,11 @@ let _workflows = workflows;
 
 export const workflowService = {
 
-    async add({ customWorkflows = {} }) {
+    add({ customWorkflows = {} } = {}) {
         _workflows = joinObjects([ workflows, customWorkflows ]);
     },
 
-    async get(workflow) {
+    get(workflow) {
         const name = workflow || "standard";
         const wf =  _workflows[name];
         if(!wf) {

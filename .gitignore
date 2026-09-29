@@ -1,4 +1,9 @@
+
 .local/
+.data/
 log
 .ai/
 AGENTS.md
+
+
+node_modules/

@@ -1,4 +1,4 @@
-import { readJson } from "./utils";
+import { readJson } from "./utils.js";
 
 
 
