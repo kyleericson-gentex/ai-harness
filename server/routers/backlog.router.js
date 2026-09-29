@@ -1,9 +1,8 @@
 import express from 'express';
+import { logger } from '../../core/services/logger.service.js';
+import { harness } from '../../core/main.js';
 
-import { clockIn } from '../services/worker.js';
-import { workflowService } from '../services/workflow.js';
-import { backlogService } from '../services/backlog.js';
-import { logger } from '../services/logger.js';
+
 
 export const router = express.Router();
 
@@ -13,7 +12,7 @@ router.route(/^\/?$/)
     .get(async (req, res) => {
         try {
 
-            const todos = backlogService.get();
+            const todos = await harness.getBacklog();
             res.json({ todos: todos });
 
         } catch(err) {
@@ -30,19 +29,25 @@ router.route(/^\/run\/?$/)
     .post(express.json(), async (req, res) => {
         try {
 
-            const body = req.body;
-
-            if(body) {
-                workflowService.add(body.customWorkflows);
-            }
-
-            const todos = backlogService.get();
-
-            const updatedTodos = await clockIn({ todos: todos });
-
-            backlogService.save(updatedTodos);
+            const updatedTodos = await harness.run({ customWorkflows: req.body.customWorkflows });
             // res.json(updatedTodos)
             res.json({ message: "backlog started, check logs or something idk" })
+
+        } catch(err) {
+            logger.app.error(err.message);
+            res.status(500).json({
+                message: `Error: ${err.message}`
+            });
+        }
+    });
+
+
+router.route(/^\/test\/?$/)
+    .post(express.json(), async (req, res) => {
+        try {
+
+            harness.test();
+            res.json({ message: "test passed" })
 
         } catch(err) {
             logger.app.error(err.message);

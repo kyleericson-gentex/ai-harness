@@ -1,5 +1,5 @@
-import { workflows } from '../workflows.js';
-import { logger } from './logger.js';
+import { workflows } from './workflow_definitions.js';
+import { logger } from '../logger.service.js';
 
 
 let _workflows = workflows;

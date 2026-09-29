@@ -1,4 +1,6 @@
 
+// todo: create a phase service to control and read the phases
+//
 export const phaseDefinitions = {
 
     discovery: {

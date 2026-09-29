@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process"
 
-import { logger } from './logger.js';
-import { copilot } from './copilot.js';
-// import { opencode } from './opencode.js';
+import { logger } from './logger.service.js';
+import { copilot } from './copilot.service.js';
+// import { opencode } from './opencode.service.js';
 
 
 

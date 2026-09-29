@@ -1,9 +1,9 @@
-import { readFile, getTimestamp, replaceTokens } from './utils.js';
-import { executePrompt } from './ai.js';
+import { readFile, getTimestamp, replaceTokens } from './utils.service.js';
+import { executePrompt } from './ai.service.js';
 import { phaseDefinitions } from '../phases.js';
-import { workflowService } from './workflow.js';
-import { repoService } from './repo.js';
-import { logger } from './logger.js';
+import { workflowService } from './workflow/workflow.service.js';
+import { repoService } from './repo.service.js';
+import { logger } from './logger.service.js';
 
 
 
