@@ -6,13 +6,11 @@ import { logger } from "./services/logger.service.js";
 
 async function run({ customWorkflows = {} } = {}) {
     try {
-
         workflowService.add(customWorkflows);
         const todos = backlogService.get();
         const updatedTodos = await clockIn({ todos: todos });
         backlogService.save(updatedTodos);
         return updatedTodos;
-
     } catch (err) {
         throw err;
     }

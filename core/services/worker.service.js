@@ -27,6 +27,7 @@ export async function clockIn({ todos }) {
         //       only create one if we don't
         todo.session = await sessionService.create(getTimestamp(), todo.sourceRepo);
 
+
         logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
         logger.app.info({ message: `Session: ${todo.session.id}` });
         logger.app.info({ message: `Source Repo: ${todo.sourceRepo}` });
@@ -34,6 +35,7 @@ export async function clockIn({ todos }) {
         logger.app.info({ message: `Objective: ${todo.objective}\n` });
 
 
+        // todo:debug:
         process.exit();
 
 
