@@ -32,8 +32,11 @@ You are a senior software architect charged with creating tasks for other softwa
 </context>
 
 <facts>
-<fact>#{artifact}# is not a permanent file and should not be referenced to elsewhere in the repo</fact>
-<fact>AGENTS.md and #{artifact}# are isolated and should not reference each other</fact>
+    <fact>#{workspace}# is your workspace</fact>
+    <fact>#{artifactLocation}# is where the artifacts are located</fact>
+    <fact>#{repoLocation}# is where the target project you will be working with is located</fact>
+    <fact>#{artifact}# is not a permanent file and should not be referenced to elsewhere in the repo</fact>
+    <fact>AGENTS.md and #{artifact}# are isolated and should not reference each other</fact>
 </facts>
 
 <task-requirements>
