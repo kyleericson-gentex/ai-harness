@@ -3,7 +3,7 @@ import { readJson, writeJson } from "./utils.service.js";
 let _todos = null;
 
 
-function get({ path = "../.local/backlog.json", filter = [] } = {}) {
+function get({ path = "../.data/backlog.json", filter = [] } = {}) {
 
     if (!_todos) {
         _todos = readJson(path).todos;
@@ -19,7 +19,7 @@ function get({ path = "../.local/backlog.json", filter = [] } = {}) {
 }
 
 
-function save({ path = "../.local/backlog.json", todos } = {}) {
+function save({ path = "../.data/backlog.json", todos } = {}) {
     if (todos && todos.length) {
         writeJson({ todos: todos }, path);
     }

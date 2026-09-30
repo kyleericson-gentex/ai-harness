@@ -13,7 +13,7 @@ const providers = [
 
 
 
-export async function executePrompt({ repo, prompt, providerId = 0 }) {
+export async function executePrompt({ workspace, prompt, providerId = 0 }) {
 
         return new Promise((resolve, reject) => {
 
@@ -26,7 +26,7 @@ export async function executePrompt({ repo, prompt, providerId = 0 }) {
                 provider.command(), 
                 provider.options(prompt), 
                 { 
-                    cwd: repo,
+                    cwd: workspace,
                     maxBuffer: 50 * 1024 * 1024
                 }
             );

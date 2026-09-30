@@ -1,13 +1,14 @@
-import { readFile, getTimestamp, replaceTokens } from './utils.service.js';
+import { readFile, getTimestamp, replaceTokens, readJson } from './utils.service.js';
 import { executePrompt } from './ai.service.js';
-import { phaseDefinitions } from '../phases.js';
+import { phaseService } from './phase/phase.service.js';
 import { workflowService } from './workflow/workflow.service.js';
-import { repoService } from './repo.service.js';
 import { logger } from './logger.service.js';
+import { sessionService } from './session/session.service.js';
 
 
 
 export async function clockIn({ todos }) {
+
 
     logger.app.info({ message: "Clocking in\n" });
 
@@ -22,12 +23,18 @@ export async function clockIn({ todos }) {
             continue;
         }
 
-        const timestamp = getTimestamp();
+        // todo: we need to check first if we already have a session going
+        //       only create one if we don't
+        todo.session = await sessionService.create(getTimestamp(), todo.sourceRepo);
 
         logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
-        logger.app.info({ message: `Session: ${timestamp}` });
-        logger.app.info({ message: `Repo: ${todo.repo}` });
+        logger.app.info({ message: `Session: ${todo.session.id}` });
+        logger.app.info({ message: `Source Repo: ${todo.sourceRepo}` });
+        logger.app.info({ message: `Workspace: ${todo.session.workspace}` });
         logger.app.info({ message: `Objective: ${todo.objective}\n` });
+
+
+        process.exit();
 
 
         let wf = workflowService.get(todo.workflow);
@@ -41,7 +48,7 @@ export async function clockIn({ todos }) {
 
         if (todo.state && todo.lastCompletedPhase) {
             previous = todo.lastCompletedPhase
-            current = phaseDefinitions[todo.lastCompletedPhase].success;
+            current = phaseService.get(todo.lastCompletedPhase).success;
         } else {
             todo.state = "active";
             todo.lastCompletedPhase = "";
@@ -54,7 +61,7 @@ export async function clockIn({ todos }) {
 
         while (totalLoops < 25 && current !== todo.break && current !== null && current !== undefined) {
 
-            const phase = phaseDefinitions[current];
+            const phase = phaseService.get(current);
             const flow = wf[current];
 
             const maxRetries = flow.maxRetries || 0;
@@ -78,17 +85,17 @@ export async function clockIn({ todos }) {
                 logger.app.info({ message: `${current}\n` });
             }
 
-            let artRoot = repoService.getArtifactRoot();
-            let statusArt = repoService.getStatusArtifact();
-
             let prompt = replaceTokens({
                 content: readFile(`${phase.prompt}`),
                 tokens: [
                     { token: "objective",        value: todo.objective },
-                    { token: "artifactLocation", value: `${artRoot}/${timestamp}` },
-                    { token: "artifact",         value: `${artRoot}/${timestamp}/${phase.artifact}` },
-                    { token: "statusArtifact",   value: `${artRoot}/${timestamp}/${statusArt}` },
-                    { token: "previousArtifact", value: previous ? `${artRoot}/${timestamp}/${phaseDefinitions[previous].artifact}` : "HARNESS_ERROR" }
+                    { token: "sessionId",        value: todo.session.id },
+                    { token: "workspace",        value: `${todo.session.workspace}` },
+                    { token: "repoLocation",     value: `${todo.session.workspace}/repo` },
+                    { token: "artifactLocation", value: `${todo.session.artifacts}` },
+                    { token: "artifact",         value: `${todo.session.artifacts}/${phase.artifact}` },
+                    { token: "statusArtifact",   value: `${todo.session.artifacts}/status.json` },
+                    { token: "previousArtifact", value: previous ? `${todo.session.artifacts}/${phaseService.get(previous).artifact}` : "HARNESS_ERROR" }
                 ]
             });
 
@@ -97,7 +104,7 @@ export async function clockIn({ todos }) {
             }
 
             const result = await executePrompt({
-                repo: todo.repo,
+                workspace: todo.session.workspace,
                 prompt: prompt,
             });
 
@@ -112,7 +119,7 @@ export async function clockIn({ todos }) {
 
             previous = current;
             todo.lastCompletedPhase = previous;
-            todo.result = repoService.readStatus(todo.repo, timestamp);
+            todo.result = readJson(`${todo.session.workspace}/artifacts/status.json`).status.toLowerCase();
 
             if (todo.result === "pass") {
                 current = flow.success || null;

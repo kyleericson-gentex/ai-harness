@@ -29,7 +29,10 @@ router.route(/^\/run\/?$/)
     .post(express.json(), async (req, res) => {
         try {
 
-            const updatedTodos = await harness.run({ customWorkflows: req.body.customWorkflows });
+            const body = req.body || {};
+            const workflows = body.customWorkflows || {};
+            const updatedTodos = await harness.run({ customWorkflows: workflows});
+
             // res.json(updatedTodos)
             res.json({ message: "backlog started, check logs or something idk" })
 

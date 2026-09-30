@@ -1,5 +1,6 @@
 import { workflows } from './workflow_definitions.js';
 import { logger } from '../logger.service.js';
+import { joinObjects } from '../utils.service.js';
 
 
 let _workflows = workflows;
