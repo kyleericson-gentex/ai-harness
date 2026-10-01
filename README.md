@@ -1,43 +1,69 @@
-# IT AI-ntern
+# IT Development AI-ntern
+
 
 Want to suck all the joy out of programming? You've come to the right place.
 This harness will let the AI do the fun part and leaves the boring part to you!
 
 Just pretend to review the code, push it, and tell everyone you wrote it yourself.
 
-(This is a learning project. Not sure how useful this would be for actual development.
-I am just learning what I can beyond just using Copilot-CLI and autopilot)
+
+
 
 
 ## about
 
 This runs a series of "phases" (which are just prompts) that cover a development pipeline: 
 
-- [discovery](./server/prompts/discovery.html)
-- [plan](./server/prompts/plan.html)
-- [create_tasks](./server/prompts/create_tasks.html)
-- [implement](./server/prompts/implement.html)
-- [review](./server/prompts/review.html)
+- [discovery](./core/prompts/discovery.html)
+- [plan](./core/prompts/plan.html)
+- [create_tasks](./core/prompts/create_tasks.html)
+- [implement](./core/prompts/implement.html)
+- [review](./core/prompts/review.html)
 
-Thats all I have for now.
 
-The phase definitions and their workflow is defined [here](./server/phases.js)
+Also see [phase definitions](./core/services/phase/phase_definitions.js) and [workflows](./core/services/workflow/workflow_definitions.js)
 
 
 `!!NOTE!! for now, this uses the copilot cli flag '--allow-all' so you know, be careful or whatever`
 
 
-## usage
 
+
+
+
+## installation
+
+- make sure you have node installed
+- clone this repository
 - make sure you have github copilot cli working
-- create a `./.data/backlog.json` file in this project's root folder (this file is ignored by git)
+- create `./.data/backlog.json` in this project's root folder
+
+
+Start the server 
+
 - cd into `./server`
 - run `npm install`
 - run `npm start` to start the server
 - server can be hit at `localhost:42069`
 
 
-## api
+
+
+
+## usage
+
+Right now this can be run by using a cli command, or starting the server and making an api call. 
+
+
+### cli
+
+From the root dir
+```
+node ./cli/main.js
+```
+
+
+### server api
 
 
 Get the backlog
@@ -49,6 +75,7 @@ Run each todo in the entire backlog
 ```
 POST localhost:42069/backlog/run
 ```
+
 
 
 
@@ -68,13 +95,13 @@ phase, or changing the state to skip a todo.
 
 
 
-#### todo object
+### todo object
 
 ```js
 {
     // required
     // the path to the repository we are working with
-    "repo": "",
+    "sourceRepo": "",
 
     // required
     // the objective of this todo
@@ -104,36 +131,59 @@ phase, or changing the state to skip a todo.
     // optional
     // the lastCompletedPhase end result
     // this is updated by the harness as todos are completed
-    "result": ""
+    "result": "",
+
+    // optional
+    // this is mostly for harness usage, this keeps track of the session information
+    // eventually this will be used if you want to continue a session, but right now that doesnt work
+    "session": {
+        // session's id
+        "id": "202610011125",
+
+        // session's workspace location
+        "workspace": "/path/to/harness/repo/.data/workspaces/202610011125/",
+
+        // session's LLM artifact location
+        "artifacts": "/path/to/harness/repo/.data/workspaces/202610011125/artifacts/"
+    },
 }
 ```
 
 
-#### example of backlog.json
+### example of backlog.json
 
 ```json
 {
     "todos": [
         {
-            "repo": "path/to/local/project/repository",
+            "sourceRepo": "path/to/local/project/repository",
+            "objective": "improve logging"
+        },
+        {
+            "sourceRepo": "path/to/local/project/repository",
             "objective": "improve logging",
-            "break": "implement",
+            "break": "plan",
+            "session": {
+                "id": "202610011125",
+                "workspace": "/path/to/harness/repo/.data/workspaces/202610011125/",
+                "artifacts": "/path/to/harness/repo/.data/workspaces/202610011125/artifacts/"
+            },
             "state": "stopped",
-            "lastCompletedPhase": "create_tasks",
+            "lastCompletedPhase": "discovery",
             "result": "breakpoint_reached"
         },
         {
-            "repo": "path/to/local/project/repository",
+            "sourceRepo": "path/to/local/project/repository",
             "objective": "find and fix any security vulnerabilities",
             "break": "plan"
         },
         {
-            "repo": "path/to/local/project/repository",
+            "sourceRepo": "path/to/local/project/repository",
             "workflow": "custom",
             "objective": "improve documentation"
         },
         {
-            "repo": "path/to/local/project/repository",
+            "sourceRepo": "path/to/local/project/repository",
             "objective": "make a super awesome feature that will make me rich",
             "state": "on_hold"
         },
@@ -143,27 +193,33 @@ phase, or changing the state to skip a todo.
 ```
 
 
-#### phases and workflows
+### phases and workflows
 
 
-Phase Definition example
 ```js
+// Phase definitions define the phases
 {
+
     // key
     discovery: {
+
         // name of phase, must match key
         name: "discovery",
+
         // path to prompt file to use
-        prompt: "./prompts/example.html",
-        // the file name of the artifact
-        // the default settings puts artifacts in the repo folder at <repo>/.ai/<timestamp>/
+        prompt: "path/to/prompts/example.html",
+
+        // the file name of the artifact this phase will create
+        // artifacts are placed in the session's workspace folder at workspace/artifacts
         artifact: "discovery.md",
     },
+
 }
 ```
 
-Phase Workflow example
+
 ```js
+// Workflows define the flow of the phases.
 {
     // key/name of the workflow
     standard: {
@@ -173,25 +229,38 @@ Phase Workflow example
 
         // key
         discovery: {
+
             // key of phase to run after success, null quits
-            success: null,
+            success: "plan",
+
             // key of phase to run after failure, null quits
             failure: null,
+
+            // optional
+            // maximun number of retries, default is 0
+            maxRetries: 0,
+
+            // optional
             // runs this code before phase execution
             before: async function() {},
+
+            // optional
             // runs this code after phase execution
             after: async function() {}
+        },
+
+        // key
+        plan: {
+            success: "create_tasks",
+            failure: null,
+            before: async function() {
+                console.log("Planning started");
+            },
+            after: async function() {
+                console.log("Planning complete");
+            }
         }
 
     }
 }
 ```
-
-## future stuff?
-
-- [ ] clone repos instead of having to already have them locally
-- [ ] poll azure and pull todos from special azure work items
-- [ ] push changes to remote
-- [ ] test phase with test results looping back into implement like review does
-- [ ] fun ui to view status of agents and stuff?
-

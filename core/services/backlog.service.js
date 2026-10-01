@@ -1,11 +1,12 @@
-import { readJson, writeJson } from "./utils.service.js";
+import { paths } from "../shared/paths.js";
+import { readJson, writeJson } from "../shared/utils.js";
 
 let _todos = null;
 
-const backlogPath = new URL('../../.data/backlog.json', import.meta.url);
+const backlogUrl = paths.data('backlog.json');
 
 
-function get({ path = backlogPath, filter = [] } = {}) {
+function get({ path = backlogUrl.pathname, filter = [] } = {}) {
 
     if (!_todos) {
         _todos = readJson(path).todos;
@@ -21,7 +22,7 @@ function get({ path = backlogPath, filter = [] } = {}) {
 }
 
 
-function save({ path = backlogPath, todos } = {}) {
+function save({ path = backlogUrl.pathname, todos } = {}) {
     if (todos && todos.length) {
         writeJson({ todos: todos }, path);
     }

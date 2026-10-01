@@ -2,11 +2,12 @@ import { promisify } from 'util';
 import { exec as cbExec } from "node:child_process"
 import { logger } from "../logger.service.js";
 import { mkdirSync } from 'fs';
+import { paths } from '../../shared/paths.js';
 
 
 
 const exec = promisify(cbExec);
-const workspaceRoot = new URL('../../../.data/workspaces/', import.meta.url);
+const workspaceRootUrl = paths.data('workspaces/');
 
 let sessions = {};
 
@@ -32,7 +33,7 @@ function remove() {
 
 async function createWorkspace(sessionId) {
 
-    const workspaceUrl = new URL(`${sessionId}/`, workspaceRoot);
+    const workspaceUrl = new URL(`${sessionId}/`, workspaceRootUrl);
     const artifactsUrl = new URL("artifacts/", workspaceUrl);
 
     // todo will this block other calls to the API?
@@ -52,10 +53,14 @@ async function createWorkspace(sessionId) {
 
 
 async function cloneSource(sessionId, sourceRepo) {
-    const workspaceUrl = sessions[sessionId].workspace;
-    await exec(`git clone ${sourceRepo} ${workspaceUrl}/repo`, (error, stdout, stderr) => {
-        logger.app.info({ message: `Cloned ${sourceRepo} into ${workspaceUrl}` });
-    });
+    const workspacePath = sessions[sessionId].workspace;
+
+    try {
+        await exec(`git clone ${sourceRepo} ${workspacePath}repo`);
+        logger.app.info({ message: `Cloned ${sourceRepo} into ${workspacePath}` });
+    } catch (err) {
+        throw err;
+    }
 }
 
 

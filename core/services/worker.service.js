@@ -1,4 +1,4 @@
-import { readFile, getTimestamp, replaceTokens, readJson } from './utils.service.js';
+import { readFile, getTimestamp, replaceTokens, readJson } from '../shared/utils.js';
 import { executePrompt } from './ai.service.js';
 import { phaseService } from './phase/phase.service.js';
 import { workflowService } from './workflow/workflow.service.js';
@@ -27,7 +27,6 @@ export async function clockIn({ todos }) {
         //       only create one if we don't
         todo.session = await sessionService.create(getTimestamp(), todo.sourceRepo);
 
-
         logger.app.info({ message: `Todo: ${i + 1}/${todos.length}` });
         logger.app.info({ message: `Session: ${todo.session.id}` });
         logger.app.info({ message: `Source Repo: ${todo.sourceRepo}` });
@@ -36,7 +35,7 @@ export async function clockIn({ todos }) {
 
 
         // todo:debug:
-        process.exit();
+        // process.exit();
 
 
         let wf = workflowService.get(todo.workflow);
@@ -64,7 +63,21 @@ export async function clockIn({ todos }) {
         while (totalLoops < 25 && current !== todo.break && current !== null && current !== undefined) {
 
             const phase = phaseService.get(current);
+            if(!phase) {
+                logger.app.error({ message: `Phase ${current} not found` });
+                todo.state = "error";
+                todo.result = `Phase ${current} not found`;
+                break;
+            }
+
             const flow = wf[current];
+            if(!flow) {
+                logger.app.error({ message: `Workflow ${current} not found` });
+                todo.state = "error";
+                todo.result = `Workflow ${current} not found`;
+                break;
+            }
+
 
             const maxRetries = flow.maxRetries || 0;
 

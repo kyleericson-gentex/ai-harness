@@ -1,34 +1,35 @@
+import { paths } from "../../shared/paths.js";
 
-// todo: create a phase service to control and read the phases
-//
+
+
 export const phaseDefinitions = {
 
     discovery: {
         name: "discovery",
-        prompt: "./prompts/discovery.html",
+        prompt: paths.prompts('discovery.html').pathname,
         artifact: "discovery.md",
     },
 
     plan: {
         name: "plan",
-        prompt: "./prompts/plan.html",
+        prompt: paths.prompts('plan.html').pathname,
         artifact: "plan.md",
     },
 
     create_tasks: {
         name: "create_tasks",
-        prompt: "./prompts/create_tasks.html",
+        prompt: paths.prompts('create_tasks.html').pathname,
         artifact: "create_tasks.md",
     },
 
     implement: {
         name: "implement",
-        prompt: "./prompts/implement.html",
+        prompt: paths.prompts('implement.html').pathname,
     },
 
     review: {
         name: "review",
-        prompt: "./prompts/review.html",
+        prompt: paths.prompts('review.html').pathname,
         artifact: "fixlist.md",
     },
 

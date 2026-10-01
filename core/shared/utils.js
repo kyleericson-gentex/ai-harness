@@ -1,7 +1,4 @@
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
-
-
-const projectRoot = new URL('../../', import.meta.url);
+import { readFileSync, writeFileSync } from 'fs';
 
 
 
@@ -57,7 +54,8 @@ export function getTimestamp() {
     const day = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}${month}${day}${hours}${minutes}`;
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
 

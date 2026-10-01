@@ -9,7 +9,7 @@ async function run({ customWorkflows = {} } = {}) {
         workflowService.add(customWorkflows);
         const todos = backlogService.get();
         const updatedTodos = await clockIn({ todos: todos });
-        backlogService.save(updatedTodos);
+        backlogService.save({ todos: updatedTodos });
         return updatedTodos;
     } catch (err) {
         throw err;
@@ -39,7 +39,6 @@ async function test() {
         throw err;
     }
 }
-
 
 
 export const harness = {
